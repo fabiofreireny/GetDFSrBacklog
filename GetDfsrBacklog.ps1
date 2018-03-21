@@ -1,19 +1,44 @@
-﻿Param (
-    [string]$outFile
+﻿<#
+.SYNOPSIS
+Retrieves backlog for every DFS replication 
+
+.DESCRIPTION
+This script will retrieve all DFS replications and list out:
+- Groups
+- Folders (assumes same name on both ends)
+- Source and destination computers
+- Current backlog
+
+A backlog of -1 means the script was unable to determine the actual backlog.
+
+It also distinguishes between inbound and outbound replications, separating them. 
+Note that this only makes sense in a hub and spoke model
+
+.EXAMPLE
+.\GetDFSrBacklog.ps1 -HTMLFilePath "c:\inetpub\wwwroot\dfsStatus\index.html" -logFilePath "d:\logs\dfsr-((get-date).toString('yyyy-MM-dd')).log" -Verbose
+#>
+
+Param(
+    [Parameter(Mandatory=$False,HelpMessage="path of HTML file")]
+    [string]$HTMLFilePath,
+
+    [Parameter(Mandatory=$False,HelpMessage="path of Log file")]
+    [string]$logFilePath
 )
 
-#$outFile = "c:\temp\dfsStatus.html"
-
+#initialie variables
 $today     = (get-date).toString('yyyy-MM-dd') 
-
 $grandResult = @()
+
+#get all DFSr connections
 $connections = (Get-DfsrConnection | ? Enabled -eq $true | sort -Property GroupName)
 
 $connections | % {
     $connection = $_
     #this is necessary to capture the "verbose" output, which gives is the actual backlog when it is > 100
     try {
-        $message = $($backLog = (Get-DfsrBacklog -GroupName $connection.GroupName -SourceComputerName $connection.SourceComputerName -DestinationComputerName $connection.DestinationComputerName -Verbose -ErrorAction stop)) 4>&1
+        $message = $($backLog = (Get-DfsrBacklog -GroupName $connection.GroupName -SourceComputerName $connection.SourceComputerName `
+            -DestinationComputerName $connection.DestinationComputerName -Verbose -ErrorAction stop)) 4>&1
     } catch {
         $message = "Error"
         $backlog = -1
@@ -45,13 +70,18 @@ $connections | % {
 }
 
 #send to HTML file
-if ($outFile) {
-    $grandResult | ConvertTo-Html -Head '<meta http-equiv="refresh" content="5"><style>table, th, td {border: 1px solid black;}th{text-align:left;}th,td{padding:2px;}</style>' -property Group, Folder, Source, Destination, Backlog -PostContent ("<p>DFS Status as of " + (get-date)) > $outFile
+if ($HTMLFilePath) {
+    #META tag is what causes auto refresh. Take it out if you don't want it
+    #Adjust STYLE as desired
+    $grandResult | ConvertTo-Html -Head '<meta http-equiv="refresh" content="5"><style>table, th, td {border: 1px solid black;}th{text-align:left;}th,td{padding:2px;}</style>' `
+        -property Group, Folder, Source, Destination, Backlog -PostContent ("<p>DFS Status as of " + (get-date)) > $HTMLFilePath
 }
 
 #send to log file
-get-date                    | Out-File D:\Scripts\Logs\getDfsrBacklog\backlogHistory-$today.log -Append
-$grandResult | ft -AutoSize | Out-File D:\Scripts\Logs\getDfsrBacklog\backlogHistory-$today.log -Append -Width 999
+if ($logFilePath) {
+    $today                      | Out-File $logFilePath -Append
+    $grandResult | ft -AutoSize | Out-File $logFilePath -Append -Width 999
+}
 
 #send to screen
-$grandResult | ft -AutoSize
+$grandResult
