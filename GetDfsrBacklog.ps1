@@ -1,6 +1,6 @@
 ﻿<#
 .SYNOPSIS
-Retrieves backlog for every DFS replication 
+Retrieves backlog for every DFS replication
 
 .DESCRIPTION
 This script will retrieve all DFS replications and list out:
@@ -10,9 +10,6 @@ This script will retrieve all DFS replications and list out:
 - Current backlog
 
 A backlog of -1 means the script was unable to determine the actual backlog.
-
-It also distinguishes between inbound and outbound replications, separating them. 
-Note that this only makes sense in a hub and spoke model
 
 .EXAMPLE
 .\GetDFSrBacklog.ps1 -HTMLFilePath "c:\inetpub\wwwroot\dfsStatus\index.html" -logFilePath "d:\logs\dfsr-((get-date).toString('yyyy-MM-dd')).log" -Verbose
@@ -27,7 +24,7 @@ Param(
 )
 
 #initialie variables
-$today     = (get-date).toString('yyyy-MM-dd') 
+$today     = (get-date).toString('yyyy-MM-dd')
 $grandResult = @()
 
 #get all DFSr connections
@@ -43,12 +40,12 @@ $connections | % {
         $message = "Error"
         $backlog = -1
     }
-     
+
     #message contains one line per replicated folder
     $message | % {
-        
+
         #figure out actual backlog from verbose output
-        if ($_ -like "*No backlog*") { 
+        if ($_ -like "*No backlog*") {
             $backLogCount = [int]0
         } elseif ($backlog -eq -1) {
             $backLogCount = [int]-1
