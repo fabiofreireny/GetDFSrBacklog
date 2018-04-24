@@ -13,6 +13,9 @@ A backlog of -1 means the script was unable to determine the actual backlog.
 
 .EXAMPLE
 .\GetDFSrBacklog.ps1 -HTMLFilePath "c:\inetpub\wwwroot\dfsStatus\index.html" -logFilePath "d:\logs\dfsr-((get-date).toString('yyyy-MM-dd')).log" -Verbose
+
+.LINK
+https://github.com/fabiofreireny/GetDFSrBacklog
 #>
 
 Param(
